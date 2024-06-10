@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prove Me Wrong</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script defer src="main.js"></script>
+</head>
+<body>
+  <h1>Prove Me Wrong</h1>
+  <div id="home-page">
+    <div id="create-room">
+      <button id="create-room-btn">Create Room</button>
+    </div>
+    <div id="join-room">
+      <input type="text" id="room-code" placeholder="Enter Room Code">
+      <input type="text" id="nickname" placeholder="Enter Nickname">
+      <button id="join-room-btn">Join Room</button>
+    </div>
+  </div>
+  <div id="game-area" style="display: none;">
+    <button id="back-btn">← Back</button>
+    <p id="welcome-message">Welcome to the game! Waiting for more players...</p>
+    <ul id="player-list"></ul>
+  </div>
+</body>
+</html>
