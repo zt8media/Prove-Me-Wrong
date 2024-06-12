@@ -1,0 +1,82 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+#home-page, #game-area {
+  padding: 20px;
+}
+
+.room-actions, .instructions, #player-list {
+  margin: 20px 0;
+}
+
+#nickname, #room-code {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.player-button {
+  display: inline-block;
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#current-turn, #card-list li {
+  display: inline-block;
+  margin: 10px;
+  padding: 20px;
+  font-size: 16px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 150px; /* Adjust as necessary for card size */
+  height: 200px; /* Adjust as necessary for card size */
+  text-align: center;
+}
+
+#current-turn {
+  font-size: 24px;
+  font-weight: bold;
+  background-color: orange;
+}
+
+#card-list, #player-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#challenge-area {
+  margin-top: 20px;
+  font-size: 18px;
+}
+
+#exit-btn, #start-game-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.selected-card {
+  background-color: lightblue;
+}
+
+.selected-player {
+  background-color: lightgreen;
+}
