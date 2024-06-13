@@ -45,6 +45,10 @@ function getNextPlayer(room) {
   return room.players[room.currentPlayerIndex];
 }
 
+function resetVotes(room) {
+  room.votes = [];
+}
+
 app.use(express.static(join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -58,6 +62,8 @@ io.on('connection', (socket) => {
     const roomCode = Math.random().toString(36).substring(2, 8);
     rooms[roomCode] = {
       players: [],
+      votes: [],
+      scores: {}
     };
     socket.join(roomCode);
     socket.emit('roomCreated', { roomCode });
@@ -68,12 +74,13 @@ io.on('connection', (socket) => {
       const playerExists = rooms[roomCode].players.find(player => player.nickname === nickname);
       if (!playerExists) {
         const playerCards = getRandomCards();
-        rooms[roomCode].players.push({ id: socket.id, nickname, cards: playerCards });
+        rooms[roomCode].players.push({ id: socket.id, nickname, cards: playerCards, score: 0 });
+        rooms[roomCode].scores[nickname] = 0;
       }
       socket.join(roomCode);
       const player = rooms[roomCode].players.find(player => player.id === socket.id);
-      socket.emit('joinedRoom', { roomCode, players: rooms[roomCode].players, cards: player.cards });
-      io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
+      socket.emit('joinedRoom', { roomCode, players: rooms[roomCode].players, cards: player.cards, scores: rooms[roomCode].scores });
+      io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players, rooms[roomCode].scores);
     } else {
       socket.emit('error', 'Room not found');
     }
@@ -101,12 +108,25 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('challenge', { challenger, challenged, card });
   });
 
+  socket.on('submitVotes', ({ roomCode, success, challenger, challenged }) => {
+    const room = rooms[roomCode];
+    if (room) {
+      if (success === 'success') {
+        room.scores[challenged]++;
+      } else {
+        room.scores[challenger]++;
+      }
+      io.to(roomCode).emit('voteResult', { result: success, scores: room.scores });
+      resetVotes(room);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected');
     for (const roomCode in rooms) {
       const room = rooms[roomCode];
       room.players = room.players.filter(player => player.id !== socket.id);
-      io.to(roomCode).emit('updatePlayerList', room.players);
+      io.to(roomCode).emit('updatePlayerList', room.players, room.scores);
     }
   });
 });
