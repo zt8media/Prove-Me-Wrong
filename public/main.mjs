@@ -1,4 +1,8 @@
+
+
 const socket = io(); // Ensure this is initialized correctly
+
+
 
 let selectedCard = null;
 let selectedPlayer = null;
@@ -95,7 +99,7 @@ socket.on('roomCreated', ({ roomCode }) => {
   document.getElementById('game-area').style.display = 'block';
   document.getElementById('welcome-message').textContent = `Room Code: ${roomCode}`;
 });
-
+//join the room and get the cards
 socket.on('joinedRoom', ({ roomCode, players, cards, scores }) => {
   const nickname = sessionStorage.getItem('nickname'); // Retrieve nickname from session storage
   alert(`Joined room: ${roomCode}`);
@@ -168,53 +172,85 @@ function updateCardList(cards) {
   });
 }
 
+// function selectCard(element, card) {
+//   if (selectedCard) {
+//     selectedCard.classList.remove('selected-card');
+//   }
+//   selectedCard = element;
+//   selectedCard.classList.add('selected-card');
+//   selectedCardData = card; // Store the card data
+//   checkChallengeReady();
+// }
 function selectCard(element, card) {
   if (selectedCard) {
-    selectedCard.classList.remove('selected-card');
+      selectedCard.classList.remove('selected-card');
   }
   selectedCard = element;
   selectedCard.classList.add('selected-card');
-  selectedCardData = card; // Store the card data
-  checkChallengeReady();
+  selectedCardData = card;
 }
 
+// function selectPlayer(element) {
+//   if (selectedPlayer) {
+//     selectedPlayer.classList.remove('selected-player');
+//   }
+//   selectedPlayer = element;
+//   selectedPlayer.classList.add('selected-player');
+//   selectedPlayerData = element.textContent.split(' ')[0]; // Store the player data
+//   checkChallengeReady();
+// }
 function selectPlayer(element) {
   if (selectedPlayer) {
-    selectedPlayer.classList.remove('selected-player');
+      selectedPlayer.classList.remove('selected-player');
   }
   selectedPlayer = element;
   selectedPlayer.classList.add('selected-player');
-  selectedPlayerData = element.textContent.split(' ')[0]; // Store the player data
-  checkChallengeReady();
+  selectedPlayerData = element.textContent;
 }
 
-function checkChallengeReady() {
-  const challengeButton = document.getElementById('challenge-btn');
-  if (selectedCard && selectedPlayer) {
-    challengeButton.disabled = false; // Enable the challenge button
-  } else {
-    challengeButton.disabled = true; // Disable the challenge button
-  }
-}
+// function checkChallengeReady() {
+//   const challengeButton = document.getElementById('challenge-btn');
+//   if (selectedCard && selectedPlayer) {
+//     challengeButton.disabled = false; // Enable the challenge button
+//   } else {
+//     challengeButton.disabled = true; // Disable the challenge button
+//   }
+// }
 
-function challengePlayer() {
-  if (selectedCard && selectedPlayer) {
-    const roomCode = document.getElementById('welcome-message').textContent.split(': ')[1];
-    const challenger = sessionStorage.getItem('nickname');
-    const challenged = selectedPlayerData; // Use the stored player data
-    if (selectedCardData && selectedCardData.text) {
+// function challengePlayer() {
+//   if (selectedCard && selectedPlayer) {
+//     const roomCode = document.getElementById('welcome-message').textContent.split(': ')[1];
+//     const challenger = sessionStorage.getItem('nickname');
+//     const challenged = selectedPlayerData; // Use the stored player data
+//     if (selectedCardData && selectedCardData.text) {
+//       socket.emit('challengePlayer', {
+//         roomCode,
+//         challenger,
+//         challenged,
+//         card: selectedCardData
+//       });
+//       resetSelections();
+//     } else {
+//       console.error("Selected card data is invalid:", selectedCardData);
+//     }
+//   } else {
+//     alert('Please select a card and a player first.');
+//   }
+// }
+function challengePlayer(card, player) {
+  const challengerNickname = sessionStorage.getItem('nickname');
+  const roomCode = sessionStorage.getItem('roomCode');
+  if (card && player) {
       socket.emit('challengePlayer', {
-        roomCode,
-        challenger,
-        challenged,
-        card: selectedCardData
+          roomCode,
+          challenger: challengerNickname,
+          challenged: player,
+          card: card
       });
       resetSelections();
-    } else {
-      console.error("Selected card data is invalid:", selectedCardData);
-    }
+      startChallengeCountdown(card, player);
   } else {
-    alert('Please select a card and a player first.');
+      alert('Please select a card and a player first.');
   }
 }
 
@@ -229,76 +265,136 @@ function resetSelections() {
   }
   document.getElementById('challenge-btn').disabled = true; // Disable the challenge button again
 }
+//new 
+document.getElementById('challenge-btn').addEventListener('click', function() {
+  const playerOne = "Player One"; // Replace with actual player data
+  const playerTwo = "Player Two"; // Replace with actual player data
+  const cardDescription = "Example Card"; // Replace with actual card data
 
-function startTimer(challengedPlayer) {
-  const timerDiv = document.getElementById('timer') || document.createElement('div');
-  timerDiv.id = 'timer';
-  timerDiv.textContent = '30';
-  document.getElementById('challenge-area').appendChild(timerDiv);
+  document.getElementById('challenge-message').innerHTML = `${playerOne} has challenged ${playerTwo} with the card: ${cardDescription}<br>${playerTwo}, can you prove them wrong?`;
+  showModal();
+  startChallengeCountdown();
+});
 
-  let timeLeft = 3;
-  const timerInterval = setInterval(() => {
+function showModal() {
+  document.getElementById('challenge-modal').style.display = 'block';
+}
+function startChallengeCountdown() {
+  let timeLeft = 30;
+  const modal = document.getElementById('challenge-modal');
+  const countdownDisplay = document.getElementById('countdown');
+  modal.style.display = 'block';
+  countdownDisplay.textContent = timeLeft;
+  const countdownTimer = setInterval(() => {
     timeLeft--;
-    timerDiv.textContent = timeLeft;
+    countdownDisplay.textContent = timeLeft;
     if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      showVotingModal(); // Enable voting after the challenge timer ends
+      clearInterval(countdownTimer);
+      countdownDisplay.textContent = "Did they complete the challenge? Discuss and vote as a group.";
+      showVotingOptions();
     }
   }, 1000);
 }
 
-function showVotingModal() {
-  const votingModal = document.getElementById('voting-modal');
-  const votingTimer = document.getElementById('voting-timer');
-  votingModal.style.display = 'block';
 
-  document.getElementById('vote-success').disabled = false;
-  document.getElementById('vote-fail').disabled = false;
-  hasVoted = false; // Reset voting status
+document.getElementById('start-challenge-btn').addEventListener('click', startChallengeCountdown);
 
-  let timeLeft = 10;
-  votingTimer.textContent = timeLeft;
-
-  voteTimerInterval = setInterval(() => {
-    timeLeft--;
-    votingTimer.textContent = timeLeft;
-    if (timeLeft <= 0) {
-      clearInterval(voteTimerInterval);
-      submitVotes(); // Submit votes automatically when time is up
-    }
+function startVotingCountdown() {
+  let voteTimeLeft = 30; // 30 seconds for voting
+  const votingTimer = setInterval(() => {
+      if (voteTimeLeft <= 0) {
+          clearInterval(votingTimer);
+          document.getElementById('vote-success').style.display = 'inline';
+          document.getElementById('vote-failure').style.display = 'inline';
+      } else {
+          voteTimeLeft--;
+      }
   }, 1000);
 }
 
-function addVote(success) {
-  if (!hasVoted) { // Ensure the player can only vote once
-    document.getElementById('vote-success').disabled = true;
-    document.getElementById('vote-fail').disabled = true;
-    hasVoted = true;
+document.getElementById('vote-success').addEventListener('click', function() {
+  updateScores('challenged', 10); // Assuming 'challenged' is an identifier you can map to the actual player
+  resetVoting();
+});
 
-    if (success) {
-      document.getElementById('vote-success').classList.add('selected-vote');
-    } else {
-      document.getElementById('vote-fail').classList.add('selected-vote');
-    }
-    submitVotes(); // Automatically submit the vote once selected
-  } else {
-    alert("You have already voted.");
+document.getElementById('vote-failure').addEventListener('click', function() {
+  updateScores('challenger', 10); // Assuming 'challenger' is an identifier
+  resetVoting();
+});
+
+// function updateScores(playerId, points) {
+//   // Assuming scores is an object holding player IDs and their scores
+//   scores[playerId] += points;
+//   io.emit('updateScore', { playerId, newScore: scores[playerId] }); // Notify server to broadcast the update
+// }
+
+function resetVoting() {
+  document.getElementById('vote-success').style.display = 'none';
+  document.getElementById('vote-failure').style.display = 'none';
+  document.getElementById('countdown').textContent = '';
+}
+
+socket.on('challenge', ({ challenger: challengeInitiator, challenged, card }) => {
+  challengedPlayer = challenged;
+  challenger = challengeInitiator; // Now it's clear that you are updating the global `challenger`
+  const challengeDiv = document.getElementById('challenge-area');
+  challengeDiv.innerHTML = `
+    <p>${challenger} has challenged ${challenged} with the card: ${card.text}</p>
+    <p>Player ${challenged}, can you prove them wrong?</p>
+  `;
+  startTimer(challenged); // Pass the challenged player to the timer function
+});
+ 
+/////new 
+function showVotingOptions() {
+  const successButton = document.getElementById('vote-success');
+  const failureButton = document.getElementById('vote-failure');
+  successButton.style.display = 'inline';
+  failureButton.style.display = 'inline';
+
+  successButton.onclick = () => updateScores(selectedPlayerData, 10);
+  failureButton.onclick = () => updateScores(sessionStorage.getItem('nickname'), 10);
+}
+function updateScores(playerId, points) {
+  if (!scores[playerId]) scores[playerId] = 0;
+  scores[playerId] += points;
+  socket.emit('updateScore', { playerId, newScore: scores[playerId] });
+  closeChallengeModal();
+}
+function resetSelections() {
+  if (selectedCard) {
+      selectedCard.classList.remove('selected-card');
+      selectedCard = null;
   }
+  if (selectedPlayer) {
+      selectedPlayer.classList.remove('selected-player');
+      selectedPlayer = null;
+  }
+  document.getElementById('challenge-btn').disabled = true;
 }
 
-function closeVotingModal() {
-  clearInterval(voteTimerInterval);
-  document.getElementById('voting-modal').style.display = 'none';
-  document.getElementById('vote-success').classList.remove('selected-vote');
-  document.getElementById('vote-fail').classList.remove('selected-vote');
+function closeChallengeModal() {
+  const modal = document.getElementById('challenge-modal');
+  modal.style.display = 'none';
+  document.getElementById('vote-success').style.display = 'none';
+  document.getElementById('vote-failure').style.display = 'none';
 }
+socket.on('roomCreated', ({ roomCode }) => {
+  sessionStorage.setItem('roomCode', roomCode);
+  document.getElementById('welcome-message').textContent = `Room Code: ${roomCode}`;
+  document.getElementById('home-page').style.display = 'none';
+  document.getElementById('game-area').style.display = 'block';
+});
 
-function submitVotes() {
-  const roomCode = document.getElementById('welcome-message').textContent.split(': ')[1];
-  const success = document.getElementById('vote-success').classList.contains('selected-vote') ? 'success' : 'fail';
-  socket.emit('submitVotes', { roomCode, success, challenger, challenged: challengedPlayer });
-  closeVotingModal();
-}
+socket.on('updatePlayerList', (players, scores) => {
+  updatePlayerList(players, scores);
+});
 
-document.getElementById('vote-success').addEventListener('click', () => addVote(true));
-document.getElementById('vote-fail').addEventListener('click', () => addVote(false));
+socket.on('startTurn', ({ currentTurn }) => {
+  if (sessionStorage.getItem('nickname') === currentTurn) {
+      document.getElementById('current-turn').textContent = 'It is your turn';
+  } else {
+      document.getElementById('current-turn').textContent = `It is ${currentTurn}'s turn`;
+  }
+  gameStarted = true;
+});

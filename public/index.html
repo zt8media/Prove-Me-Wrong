@@ -39,15 +39,12 @@
     </div>
 
     <!-- Voting Modal -->
-    <div id="voting-modal" style="display: none;">
-      <div class="modal-content">
-        <h2>Time to Vote</h2>
-        <div id="voting-timer">10</div>
-        <button id="vote-success">Success</button>
-        <button id="vote-fail">Fail</button>
-      </div>
-    </div>
-    
+    <div id="challenge-modal" style="display:none;">
+        <div id="challenge-message"></div>
+        <div id="countdown"></div>
+        <button id="vote-success" style="display:none;">Success</button>
+        <button id="vote-failure" style="display:none;">Failure</button>
+    </div>   
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

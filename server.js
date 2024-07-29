@@ -107,19 +107,27 @@ io.on('connection', (socket) => {
   socket.on('challengePlayer', ({ roomCode, challenger, challenged, card }) => {
     io.to(roomCode).emit('challenge', { challenger, challenged, card });
   });
-
-  socket.on('submitVotes', ({ roomCode, success, challenger, challenged }) => {
+  socket.on('submitVote', ({ roomCode, vote }) => {
     const room = rooms[roomCode];
-    if (room) {
-      if (success === 'success') {
-        room.scores[challenged]++;
-      } else {
-        room.scores[challenger]++;
-      }
-      io.to(roomCode).emit('voteResult', { result: success, scores: room.scores });
-      resetVotes(room);
+    room.votes.push(vote);
+
+    // Check if all players have voted
+    if (room.votes.length === room.players.length) {
+        const voteCounts = { success: 0, fail: 0 };
+        room.votes.forEach(v => voteCounts[v]++);
+        
+        if (voteCounts.success === voteCounts.fail) {
+            // Tie situation
+            io.to(roomCode).emit('tieVote', { message: 'Tie! Revote required.' });
+            room.votes = []; // Clear votes for revote
+        } else {
+            // Determine result
+            const result = voteCounts.success > voteCounts.fail ? 'success' : 'fail';
+            io.to(roomCode).emit('voteResult', { result, scores: room.scores });
+            room.votes = []; // Clear votes after decision
+        }
     }
-  });
+});
 
   socket.on('disconnect', () => {
     console.log('Client disconnected');
@@ -130,6 +138,16 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+///just added 
+io.on('connection', (socket) => {
+  socket.on('updateScore', ({ playerId, newScore }) => {
+      // Update the scores in your server-side storage
+      scores[playerId] = newScore;
+      io.emit('scoreUpdated', { playerId, newScore }); // Broadcast updated score to all clients
+  });
+});
+
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
